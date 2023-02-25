@@ -2,6 +2,7 @@ import React, {
     ChangeEvent,
     KeyboardEventHandler,
     useContext,
+    useRef,
     useState,
 } from 'react';
 
@@ -22,17 +23,30 @@ const ChatMessageInput = () => {
     const currentUser = useCurrentUser();
     const [messageValue, setMessageValue] = useState('');
     const qc = useQueryClient();
+    const messageInputRef = useRef<HTMLSpanElement>(null);
 
     const changeMessageValue = (e: ChangeEvent) => {
-        const target = e.target as HTMLInputElement;
+        const target = e.target as HTMLSpanElement;
 
-        setMessageValue(target.value);
+        setMessageValue(target.innerText);
     };
 
-    const handleKeyPress: KeyboardEventHandler<HTMLInputElement> = (e) => {
-        if (e.key !== 'Enter') return;
+    const handleKeyPress: KeyboardEventHandler<HTMLSpanElement> = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            if (messageInputRef.current) {
+                setMessageValue('');
+                messageInputRef.current.innerHTML = '';
+            }
 
-        sendMessage();
+            setTimeout(() => {
+                if (messageInputRef.current) {
+                    setMessageValue('');
+                    messageInputRef.current.innerHTML = '';
+                }
+            });
+
+            sendMessage();
+        }
     };
 
     const sendMessage = async () => {
@@ -46,8 +60,6 @@ const ChatMessageInput = () => {
             });
 
             qc.invalidateQueries(activeChat.id.toString());
-
-            setMessageValue('');
         } catch (err) {
             toast.error(`${err}`);
         }
@@ -56,11 +68,14 @@ const ChatMessageInput = () => {
     return (
         <Container>
             <MessageInput
+                ref={messageInputRef}
                 placeholder="Write a message..."
                 value={messageValue}
-                onChange={changeMessageValue}
-                onKeyUp={handleKeyPress}
-            />
+                // @ts-ignore
+                onInput={changeMessageValue}
+                onKeyDown={handleKeyPress}
+                contentEditable
+            ></MessageInput>
             {messageValue && <StyledSendIcon onClick={sendMessage} />}
         </Container>
     );
@@ -75,11 +90,12 @@ const Container = styled.div`
     overflow: hidden;
 `;
 
-const MessageInput = styled.input`
+const MessageInput = styled.span`
     width: 100%;
     padding: 5px;
     border: none;
     outline: none;
+    text-align: left;
 `;
 
 const StyledSendIcon = styled(SendIcon)`
