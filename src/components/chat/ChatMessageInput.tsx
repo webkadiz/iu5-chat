@@ -34,13 +34,11 @@ const ChatMessageInput = () => {
     const handleKeyPress: KeyboardEventHandler<HTMLSpanElement> = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             if (messageInputRef.current) {
-                setMessageValue('');
                 messageInputRef.current.innerHTML = '';
             }
 
             setTimeout(() => {
                 if (messageInputRef.current) {
-                    setMessageValue('');
                     messageInputRef.current.innerHTML = '';
                 }
             });
@@ -50,7 +48,7 @@ const ChatMessageInput = () => {
     };
 
     const sendMessage = async () => {
-        if (!messageValue || !activeChat) return;
+        if (!messageValue.trim() || !activeChat) return;
 
         try {
             await MessageService.addMessageInChat(activeChat.id, {
