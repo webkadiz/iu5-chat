@@ -7,3 +7,4 @@ export type ApiResponse = {
     type?: string;
     message?: string;
 };
+

@@ -1,13 +1,15 @@
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
 import type { Chat } from '../models/Chat';
 import type { CreateChat } from '../models/CreateChat';
 
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { OpenAPI } from '../core/OpenAPI';
+import { request as __request } from '../core/request';
+
 export class ChatService {
+
     /**
      * Returns a chats
      * @returns Chat successful operation
@@ -25,7 +27,9 @@ export class ChatService {
      * @returns Chat Successful operation
      * @throws ApiError
      */
-    public static updateChat(requestBody: CreateChat): CancelablePromise<Chat> {
+    public static updateChat(
+        requestBody: CreateChat,
+    ): CancelablePromise<Chat> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/chat',
@@ -45,7 +49,9 @@ export class ChatService {
      * @returns Chat Successful operation
      * @throws ApiError
      */
-    public static addChat(requestBody: CreateChat): CancelablePromise<Chat> {
+    public static addChat(
+        requestBody: CreateChat,
+    ): CancelablePromise<Chat> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/chat',
@@ -63,12 +69,14 @@ export class ChatService {
      * @returns Chat successful operation
      * @throws ApiError
      */
-    public static getChatById(chatId: number): CancelablePromise<Chat> {
+    public static getChatById(
+        chatId: number,
+    ): CancelablePromise<Chat> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/chat/{chatId}',
             path: {
-                chatId: chatId,
+                'chatId': chatId,
             },
             errors: {
                 400: `Invalid ID supplied`,
@@ -83,16 +91,19 @@ export class ChatService {
      * @returns void
      * @throws ApiError
      */
-    public static deleteChat(chatId: number): CancelablePromise<void> {
+    public static deleteChat(
+        chatId: number,
+    ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/chat/{chatId}',
             path: {
-                chatId: chatId,
+                'chatId': chatId,
             },
             errors: {
                 400: `Invalid chat value`,
             },
         });
     }
+
 }

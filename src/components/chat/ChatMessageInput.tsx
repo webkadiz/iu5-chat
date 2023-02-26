@@ -6,19 +6,25 @@ import React, {
     useState,
 } from 'react';
 
-import { fadeInRight } from 'react-animations';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import MicIcon from '@mui/icons-material/Mic';
+
 import { useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 
-import { keyframes } from '@emotion/react';
 import styled from '@emotion/styled';
 import SendIcon from '@mui/icons-material/Send';
 
 import { MessageService } from '../../api/generated/services/MessageService';
 import { ActiveChatContext } from '../../context/active-chat';
 import { useCurrentUser } from '../../state/current-user/slice';
+import CollapseAnim from '../common/CollapseAnim';
 
-const ChatMessageInput = () => {
+type Props = {
+    onSend: () => void;
+};
+
+const ChatMessageInput = ({ onSend }: Props) => {
     const { activeChat } = useContext(ActiveChatContext);
     const currentUser = useCurrentUser();
     const [messageValue, setMessageValue] = useState('');
@@ -28,21 +34,11 @@ const ChatMessageInput = () => {
     const changeMessageValue = (e: ChangeEvent) => {
         const target = e.target as HTMLSpanElement;
 
-        setMessageValue(target.innerText);
+        setMessageValue(target.innerHTML);
     };
 
     const handleKeyPress: KeyboardEventHandler<HTMLSpanElement> = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            if (messageInputRef.current) {
-                messageInputRef.current.innerHTML = '';
-            }
-
-            setTimeout(() => {
-                if (messageInputRef.current) {
-                    messageInputRef.current.innerHTML = '';
-                }
-            });
-
             sendMessage();
         }
     };
@@ -50,9 +46,21 @@ const ChatMessageInput = () => {
     const sendMessage = async () => {
         if (!messageValue.trim() || !activeChat) return;
 
+        if (messageInputRef.current) {
+            messageInputRef.current.innerHTML = '';
+        }
+
+        setTimeout(() => {
+            if (messageInputRef.current) {
+                messageInputRef.current.innerHTML = '';
+            }
+        });
+
+        onSend();
+
         try {
             await MessageService.addMessageInChat(activeChat.id, {
-                content: messageValue,
+                content: messageValue.trim(),
                 fromId: currentUser.id,
                 toId: activeChat.id,
             });
@@ -65,6 +73,7 @@ const ChatMessageInput = () => {
 
     return (
         <Container>
+            <StyledAttachFileIcon />
             <MessageInput
                 ref={messageInputRef}
                 placeholder="Write a message..."
@@ -74,15 +83,28 @@ const ChatMessageInput = () => {
                 onKeyDown={handleKeyPress}
                 contentEditable
             ></MessageInput>
-            {messageValue && <StyledSendIcon onClick={sendMessage} />}
+            <SendMicIconContainer>
+                <CollapseAnim isVisible={!!messageValue}>
+                    <StyledSendIcon onClick={sendMessage} />
+                </CollapseAnim>
+                <CollapseAnim isVisible={!messageValue}>
+                    <StyledMicIcon />
+                </CollapseAnim>
+            </SendMicIconContainer>
         </Container>
     );
 };
 
-const fadeInRightAnimation = keyframes`${fadeInRight}`;
+const SendMicIconContainer = styled.div`
+    width: 24px;
+    flex-shrink: 0;
+    height: 100%;
+    position: relative;
+`;
 
 const Container = styled.div`
     display: flex;
+    align-items: center;
     padding: 10px;
     background: white;
     overflow: hidden;
@@ -99,7 +121,17 @@ const MessageInput = styled.span`
 const StyledSendIcon = styled(SendIcon)`
     cursor: pointer;
     color: blue;
-    animation: 0.3s ${fadeInRightAnimation};
+`;
+
+const StyledMicIcon = styled(MicIcon)`
+    cursor: pointer;
+`;
+
+const StyledAttachFileIcon = styled(AttachFileIcon)`
+    font-size: 1.8rem;
+    cursor: pointer;
+    margin-right: 8px;
+    opacity: 0.5;
 `;
 
 export default ChatMessageInput;

@@ -12,3 +12,4 @@ export type CreateMessage = {
     fromId: number;
     toId: number;
 };
+

@@ -38,7 +38,7 @@ export function makeServer({ environment = 'test' } = {}) {
             const Alex = server.create('user', {
                 id: 4,
                 username: 'Alex',
-                avatar: '',
+                avatar: '/hisoka.png',
             });
 
             const BobChat = server.create('chat', {
@@ -65,7 +65,7 @@ export function makeServer({ environment = 'test' } = {}) {
                 chat: BobChat,
                 from: Alex,
                 to: Bob,
-                createdAt: '2023-02-25T09:25:12.771Z'
+                createdAt: '2023-02-25T09:25:12.771Z',
             });
             server.create('message', {
                 id: 2,
@@ -73,7 +73,7 @@ export function makeServer({ environment = 'test' } = {}) {
                 chat: BobChat,
                 from: Bob,
                 to: Alex,
-                createdAt: '2023-02-24T09:25:12.771Z'
+                createdAt: '2023-02-24T09:25:12.771Z',
             });
             server.create('message', {
                 id: 3,
@@ -81,7 +81,7 @@ export function makeServer({ environment = 'test' } = {}) {
                 chat: BobChat,
                 from: Alex,
                 to: Bob,
-                createdAt: '2023-02-24T09:45:12.771Z'
+                createdAt: '2023-02-24T09:45:12.771Z',
             });
             server.create('message', {
                 id: 4,

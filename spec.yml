@@ -203,6 +203,7 @@ components:
                 - to
                 - fromId
                 - toId
+                - createdAt
             type: object
             properties:
                 id:
@@ -220,6 +221,8 @@ components:
                     type: integer
                 toId:
                     type: integer
+                createdAt:
+                    type: string
         CreateMessage:
             required:
                 - content

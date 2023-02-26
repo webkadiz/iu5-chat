@@ -11,4 +11,6 @@ export type Message = {
     to: User;
     fromId: number;
     toId: number;
+    createdAt: string;
 };
+

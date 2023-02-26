@@ -7,3 +7,4 @@ export type Chat = {
     name: string;
     avatar: string;
 };
+

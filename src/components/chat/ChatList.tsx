@@ -14,7 +14,7 @@ const ChatList = ({ chats }: Props) => {
 
     useEffect(() => {
         chats[0] && setActiveChat(chats[0]);
-    }, []);
+    }, [chats, setActiveChat]);
 
     const selectChat = (chat: Chat) => {
         setActiveChat(chat);

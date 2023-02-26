@@ -1,13 +1,15 @@
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
 import type { CreateMessage } from '../models/CreateMessage';
 import type { Message } from '../models/Message';
 
+import type { CancelablePromise } from '../core/CancelablePromise';
+import { OpenAPI } from '../core/OpenAPI';
+import { request as __request } from '../core/request';
+
 export class MessageService {
+
     /**
      * get messages for chat
      * @param chatId chat id
@@ -15,13 +17,13 @@ export class MessageService {
      * @throws ApiError
      */
     public static getMessagesByChat(
-        chatId: number
+        chatId: number,
     ): CancelablePromise<Array<Message>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/chat/{chatId}/message',
             path: {
-                chatId: chatId,
+                'chatId': chatId,
             },
         });
     }
@@ -35,16 +37,17 @@ export class MessageService {
      */
     public static addMessageInChat(
         chatId: number,
-        requestBody: CreateMessage
+        requestBody: CreateMessage,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/chat/{chatId}/message',
             path: {
-                chatId: chatId,
+                'chatId': chatId,
             },
             body: requestBody,
             mediaType: 'application/json',
         });
     }
+
 }
