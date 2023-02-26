@@ -1,6 +1,10 @@
-import React, {
+import {
     ChangeEvent,
+    ForwardedRef,
+    forwardRef,
     KeyboardEventHandler,
+    MutableRefObject,
+    RefObject,
     useContext,
     useRef,
     useState,
@@ -22,14 +26,14 @@ import CollapseAnim from '../common/CollapseAnim';
 
 type Props = {
     onSend: () => void;
+    messageInputRef: RefObject<HTMLSpanElement>;
 };
 
-const ChatMessageInput = ({ onSend }: Props) => {
+const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
     const { activeChat } = useContext(ActiveChatContext);
     const currentUser = useCurrentUser();
     const [messageValue, setMessageValue] = useState('');
     const qc = useQueryClient();
-    const messageInputRef = useRef<HTMLSpanElement>(null);
 
     const changeMessageValue = (e: ChangeEvent) => {
         const target = e.target as HTMLSpanElement;
@@ -46,7 +50,7 @@ const ChatMessageInput = ({ onSend }: Props) => {
     const sendMessage = async () => {
         if (!messageValue.trim() || !activeChat) return;
 
-        if (messageInputRef.current) {
+        if (messageInputRef && messageInputRef.current) {
             messageInputRef.current.innerHTML = '';
         }
 

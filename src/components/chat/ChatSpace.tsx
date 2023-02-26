@@ -17,9 +17,15 @@ const ChatSpace = () => {
     const [messageReply, setMessageReply] = useState<Message | null>(null);
     const [scrollPosition, setScrollPosition] = useState(SCROLL_END);
     const listRef = useRef<HTMLDivElement>(null);
+    const messageInputRef = useRef<HTMLSpanElement>(null);
 
     const onReply = (message: Message) => {
         setMessageReply(message);
+
+        if (messageInputRef.current) {
+            console.log('reply', messageInputRef.current);
+            messageInputRef.current.focus();
+        }
     };
 
     const onSend = () => {
@@ -33,6 +39,8 @@ const ChatSpace = () => {
                 });
             }
         }, 1000);
+
+        if (messageInputRef.current) messageInputRef.current.focus();
     };
 
     const closeMessageReply = () => {
@@ -69,7 +77,10 @@ const ChatSpace = () => {
                                 onClose={closeMessageReply}
                             />
                         )}
-                        <ChatMessageInput onSend={onSend} />
+                        <ChatMessageInput
+                            onSend={onSend}
+                            messageInputRef={messageInputRef}
+                        />
                     </InputBox>
                 </>
             )}
