@@ -40,7 +40,6 @@ const MessageAttachFile: React.FC = () => {
 
             await new Promise<void>((resolve) => {
                 reader.addEventListener('load', () => {
-                    console.log('load');
                     setPreview(reader.result as string);
                     resolve();
                 });
@@ -53,8 +52,6 @@ const MessageAttachFile: React.FC = () => {
                 reader.readAsDataURL(file);
             });
         }
-
-        console.log('after open');
 
         setChoosenFile(file);
         setIsModalOpen(true);
