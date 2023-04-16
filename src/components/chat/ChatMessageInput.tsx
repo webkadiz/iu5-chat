@@ -27,20 +27,18 @@ import CollapseAnim from '../common/CollapseAnim';
 
 import { Remarkable } from 'remarkable';
 import MessageAttachFile from '../message/MessageAttachFile';
+import { TextareaAutosize } from '@mui/material';
 
 type Props = {
     onSend: () => void;
     messageInputRef: RefObject<HTMLTextAreaElement>;
 };
 
-const BASE_HEIGHT = 15;
-
 const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
     const { activeChat } = useContext(ActiveChatContext);
     const currentUser = useCurrentUser();
     const [messageValue, setMessageValue] = useState('');
     const [md, setMd] = useState<Remarkable | null>(null);
-    const [height, setHeight] = useState(BASE_HEIGHT);
     const qc = useQueryClient();
 
     useEffect(() => {
@@ -55,7 +53,6 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
     const changeMessageValue: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
         console.log(e.target.clientHeight);
         console.log(e.target.scrollHeight);
-        setHeight(e.target.scrollHeight - 10);
         setMessageValue(e.target.value);
     };
 
@@ -71,7 +68,6 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
         if (!messageValue.trim() || !activeChat) return;
 
         setMessageValue('');
-        setHeight(BASE_HEIGHT);
 
         onSend();
 
@@ -93,12 +89,11 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
             <MessageAttachFile />
             <MessageInput
                 ref={messageInputRef}
-                placeholder="Write a message..."
+                placeholder="Пишите сообщеньку..."
                 onInput={changeMessageValue}
                 onKeyDown={handleKeyPress}
                 value={messageValue}
-                $height={height}
-            ></MessageInput>
+            />
             <SendMicIconContainer>
                 <CollapseAnim isVisible={!!messageValue}>
                     <StyledSendIcon onClick={sendMessage} />
@@ -126,9 +121,8 @@ const Container = styled.div`
     overflow: hidden;
 `;
 
-const MessageInput = styled.textarea<{ $height: number }>`
+const MessageInput = styled(TextareaAutosize)`
     width: 100%;
-    height: ${(p) => p.$height}px;
     padding: 5px;
     border: none;
     outline: none;
