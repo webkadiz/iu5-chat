@@ -17,7 +17,7 @@ const ChatSpace = () => {
     const [messageReply, setMessageReply] = useState<Message | null>(null);
     const [scrollPosition, setScrollPosition] = useState(SCROLL_END);
     const listRef = useRef<HTMLDivElement>(null);
-    const messageInputRef = useRef<HTMLSpanElement>(null);
+    const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
     const onReply = (message: Message) => {
         setMessageReply(message);

@@ -1,8 +1,10 @@
+import { ThemeProvider } from '@emotion/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Provider } from 'react-redux';
 
 import Root from './components/common/Root';
+import theme from './components/styled/theme';
 import ActiveChatProvider from './context/active-chat';
 import store from './state/store';
 
@@ -12,9 +14,11 @@ function App() {
     return (
         <Provider store={store}>
             <QueryClientProvider client={queryClient}>
-                <ActiveChatProvider>
-                    <Root />
-                </ActiveChatProvider>
+                <ThemeProvider theme={theme}>
+                    <ActiveChatProvider>
+                        <Root />
+                    </ActiveChatProvider>
+                </ThemeProvider>
             </QueryClientProvider>
         </Provider>
     );

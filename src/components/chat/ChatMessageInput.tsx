@@ -1,16 +1,17 @@
 import {
     ChangeEvent,
+    ChangeEventHandler,
     ForwardedRef,
     forwardRef,
     KeyboardEventHandler,
     MutableRefObject,
     RefObject,
     useContext,
+    useEffect,
     useRef,
     useState,
 } from 'react';
 
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import MicIcon from '@mui/icons-material/Mic';
 
 import { useQueryClient } from 'react-query';
@@ -24,47 +25,59 @@ import { ActiveChatContext } from '../../context/active-chat';
 import { useCurrentUser } from '../../state/current-user/slice';
 import CollapseAnim from '../common/CollapseAnim';
 
+import { Remarkable } from 'remarkable';
+import MessageAttachFile from '../message/MessageAttachFile';
+
 type Props = {
     onSend: () => void;
-    messageInputRef: RefObject<HTMLSpanElement>;
+    messageInputRef: RefObject<HTMLTextAreaElement>;
 };
+
+const BASE_HEIGHT = 15;
 
 const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
     const { activeChat } = useContext(ActiveChatContext);
     const currentUser = useCurrentUser();
     const [messageValue, setMessageValue] = useState('');
+    const [md, setMd] = useState<Remarkable | null>(null);
+    const [height, setHeight] = useState(BASE_HEIGHT);
     const qc = useQueryClient();
 
-    const changeMessageValue = (e: ChangeEvent) => {
-        const target = e.target as HTMLSpanElement;
+    useEffect(() => {
+        setMd(
+            new Remarkable({
+                typographer: false,
+                breaks: true,
+            })
+        );
+    }, []);
 
-        setMessageValue(target.innerHTML);
+    const changeMessageValue: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+        console.log(e.target.clientHeight);
+        console.log(e.target.scrollHeight);
+        setHeight(e.target.scrollHeight - 10);
+        setMessageValue(e.target.value);
     };
 
-    const handleKeyPress: KeyboardEventHandler<HTMLSpanElement> = (e) => {
+    const handleKeyPress: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
     };
 
     const sendMessage = async () => {
+        if (!md) return;
         if (!messageValue.trim() || !activeChat) return;
 
-        if (messageInputRef && messageInputRef.current) {
-            messageInputRef.current.innerHTML = '';
-        }
-
-        setTimeout(() => {
-            if (messageInputRef.current) {
-                messageInputRef.current.innerHTML = '';
-            }
-        });
+        setMessageValue('');
+        setHeight(BASE_HEIGHT);
 
         onSend();
 
         try {
             await MessageService.addMessageInChat(activeChat.id, {
-                content: messageValue.trim(),
+                content: md.render(messageValue),
                 fromId: currentUser.id,
                 toId: activeChat.id,
             });
@@ -77,15 +90,14 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
 
     return (
         <Container>
-            <StyledAttachFileIcon />
+            <MessageAttachFile />
             <MessageInput
                 ref={messageInputRef}
                 placeholder="Write a message..."
-                value={messageValue}
-                // @ts-ignore
                 onInput={changeMessageValue}
                 onKeyDown={handleKeyPress}
-                contentEditable
+                value={messageValue}
+                $height={height}
             ></MessageInput>
             <SendMicIconContainer>
                 <CollapseAnim isVisible={!!messageValue}>
@@ -101,25 +113,27 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
 
 const SendMicIconContainer = styled.div`
     width: 24px;
+    height: 24px;
     flex-shrink: 0;
-    height: 100%;
     position: relative;
 `;
 
 const Container = styled.div`
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     padding: 10px;
     background: white;
     overflow: hidden;
 `;
 
-const MessageInput = styled.span`
+const MessageInput = styled.textarea<{ $height: number }>`
     width: 100%;
+    height: ${(p) => p.$height}px;
     padding: 5px;
     border: none;
     outline: none;
     text-align: left;
+    resize: none;
 `;
 
 const StyledSendIcon = styled(SendIcon)`
@@ -129,13 +143,6 @@ const StyledSendIcon = styled(SendIcon)`
 
 const StyledMicIcon = styled(MicIcon)`
     cursor: pointer;
-`;
-
-const StyledAttachFileIcon = styled(AttachFileIcon)`
-    font-size: 1.8rem;
-    cursor: pointer;
-    margin-right: 8px;
-    opacity: 0.5;
 `;
 
 export default ChatMessageInput;

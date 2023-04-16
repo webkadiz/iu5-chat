@@ -69,7 +69,12 @@ const ChatMessageList = forwardRef(
                         {!isCurrentUserMessage(currentUser, messages[0]) && (
                             <MessageAvatar src={messages[0].from.avatar} />
                         )}
-                        <MessageGroup>
+                        <MessageGroup
+                            current={isCurrentUserMessage(
+                                currentUser,
+                                messages[0]
+                            )}
+                        >
                             {messages.map((message) => (
                                 <MessageBox
                                     key={message.id}
@@ -159,11 +164,16 @@ const MessageGroupContainer = styled.div<{ current: boolean }>`
     margin-bottom: 10px;
 `;
 
-const MessageGroup = styled.div`
+const MessageGroup = styled.div<{ current: boolean }>`
     display: flex;
     flex-direction: column;
     margin-left: 10px;
     margin-right: 10px;
+
+    > div:last-child {
+        border-radius: ${(p) =>
+            p.current ? '8px 8px 0px 8px' : '8px 8px 8px 0px'};
+    }
 `;
 
 const MessageBox = styled.div<{ current: boolean }>`
@@ -171,7 +181,7 @@ const MessageBox = styled.div<{ current: boolean }>`
     background: ${(p) => (p.current ? '#91d47b' : 'white')};
     align-self: ${(p) => (p.current ? 'flex-end' : 'flex-start')};
     padding: 10px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-bottom: 2px;
     text-align: left;
 `;
@@ -179,6 +189,10 @@ const MessageBox = styled.div<{ current: boolean }>`
 const MessageContent = styled.span`
     text-align: left;
     // min-width: 150px;
+
+    p {
+        margin: 0;
+    }
 `;
 
 // const BottomBar = styled.div`
