@@ -1,5 +1,4 @@
 import styled from '@emotion/styled';
-import prettyBytes from 'pretty-bytes';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import {
     Button,
@@ -8,29 +7,35 @@ import {
     DialogContent,
     TextField,
 } from '@mui/material';
+import prettyBytes from 'pretty-bytes';
 import { useEffect, useRef, useState } from 'react';
-import Div from '../styled/Div';
 import DocumentIcon from '../icons/DocumentIcon';
 import { CircularProgressWithLabel } from '../styled/CircularProgressWithLabel';
-
-export interface UploadFile {
-    data: string;
-    fileName: string;
-    fileSize: number;
-    totalChunks: number;
-    chunkIndex: number;
-}
+import Div from '../styled/Div';
+import { saveFile } from './utils/saveFile';
 
 export interface SocketMessage<T> {
     type: SocketMessageType;
     payload?: T;
 }
 
+export interface UploadFile {
+    data: string;
+    fileSize: number;
+    totalChunks: number;
+    chunkIndex: number;
+}
+
 export interface SuccessUploadFile {
     finalFileName: string;
 }
 
-export type Payload = UploadFile | SuccessUploadFile;
+export interface DownloadFile {
+    data: Buffer;
+    fileSize: number;
+    totalChunks: number;
+    chunkIndex: number;
+}
 
 export enum SocketMessageType {
     DATA = 'Data',
@@ -45,9 +50,12 @@ const CHUNK_SIZE: number = 15 * 1e3;
 const SERVER_HOST: string = 'ws://localhost:8999';
 const FILE_HOST: string = 'http://localhost:8999';
 
+const downloadFileChunks: Uint8Array[] = [];
+
 const MessageAttachFile: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const socketRef = useRef<WebSocket | null>(null);
+    const uploadSocketRef = useRef<WebSocket | null>(null);
+    const downloadSocketRef = useRef<WebSocket | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [choosenFile, setChoosenFile] = useState<File | null>(null);
@@ -87,16 +95,14 @@ const MessageAttachFile: React.FC = () => {
     };
 
     const uploadChunk = (readerEvent: ProgressEvent<FileReader>): void => {
-        if (!socketRef.current || chunkIndex === null) {
+        if (!uploadSocketRef.current || chunkIndex === null) {
             return;
         }
 
         const totalChunks = Math.ceil((choosenFile?.size ?? 0) / CHUNK_SIZE);
-        console.log(totalChunks);
 
         const payload: UploadFile = {
             data: readerEvent.target?.result as string,
-            fileName: choosenFile?.name as string,
             fileSize: choosenFile?.size as number,
             totalChunks,
             chunkIndex,
@@ -107,7 +113,7 @@ const MessageAttachFile: React.FC = () => {
             payload,
         };
 
-        socketRef.current.send(JSON.stringify(message));
+        uploadSocketRef.current.send(JSON.stringify(message));
         setProgress((chunkIndex / (totalChunks)) * 100);
 
         if (!(chunkIndex === totalChunks)) {
@@ -132,9 +138,6 @@ const MessageAttachFile: React.FC = () => {
 
         const file = files[0];
 
-        const url = `${SERVER_HOST}/upload`;
-        socketRef.current = new WebSocket(url);
-
         if (['image/jpeg', 'image/png'].includes(file.type)) {
             const reader = new FileReader();
 
@@ -157,22 +160,21 @@ const MessageAttachFile: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const sendFileClickHandler = async () => {
-        if (!socketRef.current) {
-            return;
-        }
+    const uploadFileClickHandler = (): void => {
+        const encodedFilename = encodeURIComponent(choosenFile?.name as string);
 
-        socketRef.current.onopen = function () {
-            console.log('Connected');
+        const url = `${SERVER_HOST}/upload/file/${encodedFilename}`;
+        uploadSocketRef.current = new WebSocket(url);
 
+        uploadSocketRef.current.onopen = function () {
             const message: SocketMessage<void> = {
                 type: SocketMessageType.START_UPLOAD,
             };
 
-            socketRef.current?.send(JSON.stringify(message));
+            uploadSocketRef.current?.send(JSON.stringify(message));
         };
 
-        socketRef.current.onmessage = function (event) {
+        uploadSocketRef.current.onmessage = function (event) {
             const { type, payload }: SocketMessage<SuccessUploadFile> =
                 JSON.parse(event.data);
 
@@ -184,22 +186,68 @@ const MessageAttachFile: React.FC = () => {
             }
         };
 
-        socketRef.current.onclose = function () {
+        uploadSocketRef.current.onclose = function () {
             console.log('Connection is closed');
         };
 
-        socketRef.current.onerror = function (e) {
+        uploadSocketRef.current.onerror = function (e) {
             console.log(e);
         };
 
         setChunkIndex(1);
     };
 
+    const downloadFileClickHandler = async () => {
+        const fileName = "example.png";
+        const encodedFilename = encodeURIComponent(fileName);
+
+        const url = `${SERVER_HOST}/download/file/${encodedFilename}`;
+        downloadSocketRef.current = new WebSocket(url);
+
+        downloadSocketRef.current.binaryType = 'arraybuffer';
+
+        downloadSocketRef.current.onopen = function () {
+            const message: SocketMessage<void> = {
+                type: SocketMessageType.START_DOWNLOAD,
+            };
+
+            downloadSocketRef.current?.send(JSON.stringify(message));
+        };
+        
+        downloadSocketRef.current.onmessage = function (event) {
+            const { type, payload }: SocketMessage<DownloadFile> =
+                JSON.parse(event.data);
+
+
+            switch (type) {
+                case SocketMessageType.DATA:
+                    if (payload) {
+                        const { data, totalChunks, chunkIndex }: DownloadFile = payload;
+ 
+                        downloadFileChunks.push(new Uint8Array(data.toJSON().data));
+
+                        if (chunkIndex === totalChunks) {
+                            saveFile(fileName, downloadFileChunks);
+                        }
+                    }
+            }
+        };
+
+        downloadSocketRef.current.onclose = function () {
+            console.log('Connection is closed');
+        };
+
+        downloadSocketRef.current.onerror = function (e) {
+            console.log(e);
+        };
+    }
+
     const closeModalHandler = () => {
         if (!fileInputRef.current) return;
 
         fileInputRef.current.value = '';
-        socketRef.current = null;
+        uploadSocketRef.current = null;
+        downloadSocketRef.current = null;
 
         setTimeout(() => {
             setChoosenFile(null);
@@ -253,7 +301,8 @@ const MessageAttachFile: React.FC = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={closeModalHandler}>Отмена</Button>
-                    <Button onClick={sendFileClickHandler}>Отправить</Button>
+                    <Button onClick={uploadFileClickHandler}>Отправить</Button>
+                    <Button onClick={downloadFileClickHandler}>Скачать</Button>
                 </DialogActions>
             </Dialog>
         </>
