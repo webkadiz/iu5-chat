@@ -31,8 +31,10 @@ export interface SuccessUploadFile {
 }
 
 export interface DownloadFile {
-    data: Buffer;
-    fileSize: number;
+    data: {
+        type: 'Buffer';
+        data: number[];
+    };
     totalChunks: number;
     chunkIndex: number;
 }
@@ -223,8 +225,12 @@ const MessageAttachFile: React.FC = () => {
                 case SocketMessageType.DATA:
                     if (payload) {
                         const { data, totalChunks, chunkIndex }: DownloadFile = payload;
+
+                        if (chunkIndex === 1) {
+                            downloadFileChunks.length = 0;
+                        } 
  
-                        downloadFileChunks.push(new Uint8Array(data.toJSON().data));
+                        downloadFileChunks.push(new Uint8Array(data.data));
 
                         if (chunkIndex === totalChunks) {
                             saveFile(fileName, downloadFileChunks);
