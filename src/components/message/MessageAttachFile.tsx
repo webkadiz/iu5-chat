@@ -49,8 +49,11 @@ export enum SocketMessageType {
 
 const CHUNK_SIZE: number = 15 * 1e3;
 
-const SERVER_HOST: string = 'ws://localhost:8999';
-const FILE_HOST: string = 'http://localhost:8999';
+// const SERVER_HOST: string = 'ws://localhost:49160';
+// const FILE_HOST: string = 'http://localhost:49160';
+
+const SERVER_HOST: string = 'ws://95.163.237.79:49160';
+const FILE_HOST: string = 'http://95.163.237.79:49160';
 
 const downloadFileChunks: Uint8Array[] = [];
 
@@ -174,6 +177,8 @@ const MessageAttachFile: React.FC = () => {
             };
 
             uploadSocketRef.current?.send(JSON.stringify(message));
+
+            setChunkIndex(1);
         };
 
         uploadSocketRef.current.onmessage = function (event) {
@@ -195,8 +200,6 @@ const MessageAttachFile: React.FC = () => {
         uploadSocketRef.current.onerror = function (e) {
             console.log(e);
         };
-
-        setChunkIndex(1);
     };
 
     const downloadFileClickHandler = async () => {
