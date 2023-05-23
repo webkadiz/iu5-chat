@@ -29,7 +29,6 @@ const ChatSpace = () => {
     setMessageReply(message);
 
     if (messageInputRef.current) {
-      console.log('reply', messageInputRef.current);
       messageInputRef.current.focus();
     }
   };

@@ -13,7 +13,7 @@ const MessageReplyPreview = ({ message, onClose }: Props) => {
     <Container>
       <StyledReplyIcon />
       <div>
-        <UsernameReply>{message.user_from}</UsernameReply>
+        <UsernameReply>{message.userFrom.username}</UsernameReply>
         <MessageReplyText>{message.content}</MessageReplyText>
       </div>
       <StyledCloseIcon onClick={onClose} />

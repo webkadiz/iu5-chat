@@ -31,11 +31,16 @@ export type Chat = {
 export type Message = {
   id: number;
   content: string;
-  user_from: number;
+  userFrom: User;
   attachment: string[];
   photos: string[];
   audio: string;
   timeCreated: string;
-  reactions: string;
+  reactions: Reaction[];
   shown: boolean;
+};
+
+export type Reaction = {
+  reaction: string;
+  quantity: number;
 };

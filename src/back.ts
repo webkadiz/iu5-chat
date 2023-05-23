@@ -81,3 +81,13 @@ type CreateMessageDto = Pick<
 export const createMessage = (data: CreateMessageDto): Promise<void> => {
   return axios.post('/iuchat/message', data);
 };
+
+type CreateReactionDto = {
+  messId: number;
+  reactionName: string;
+  userId: number;
+};
+
+export const createReaction = (data: CreateReactionDto): Promise<void> => {
+  return axios.post('/iuchat/reaction', data);
+};
