@@ -40,7 +40,7 @@ const CreateChatModal: React.FC<Props> = ({ setDrawerOpen }) => {
   const qc = useQueryClient();
 
   const onSearch: ChangeEventHandler<HTMLInputElement> = (e) => {
-    const value = e.target.value.trim();
+    const value = e.target.value;
 
     setSearch(value);
   };
@@ -104,7 +104,7 @@ const CreateChatModal: React.FC<Props> = ({ setDrawerOpen }) => {
                   placeholder="Название"
                   className="dialog-search"
                   value={chatName}
-                  onChange={(e) => setChatName(e.target.value.trim())}
+                  onChange={(e) => setChatName(e.target.value)}
                 />
                 <TextField
                   fullWidth

@@ -3,7 +3,13 @@ import styled from '@emotion/styled';
 
 import { useCurrentUser } from '../../state/current-user/slice';
 import EmojiList from '../emoji/EmojiList';
-import { List, ListItemButton, Popover, PopoverOrigin } from '@mui/material';
+import {
+  Avatar,
+  List,
+  ListItemButton,
+  Popover,
+  PopoverOrigin,
+} from '@mui/material';
 import { useState } from 'react';
 import moment from 'moment';
 import { Message, User } from '../../types';
@@ -68,10 +74,11 @@ const ChatMessageList = forwardRef(
           <MessageGroupContainer
             current={isCurrentUserMessage(currentUser, messages[0])}
           >
-            {
-              !isCurrentUserMessage(currentUser, messages[0]) && null
-              // <MessageAvatar src={messages[0].from.avatar} />
-            }
+            {!isCurrentUserMessage(currentUser, messages[0]) && (
+              <MessageAvatar>
+                {messages[0].userFrom.username[0].toUpperCase()}
+              </MessageAvatar>
+            )}
             <MessageGroup
               current={isCurrentUserMessage(currentUser, messages[0])}
             >
@@ -95,10 +102,11 @@ const ChatMessageList = forwardRef(
                 </MessageBox>
               ))}
             </MessageGroup>
-            {
-              isCurrentUserMessage(currentUser, messages[0]) && null
-              // <MessageAvatar src={messages[0].from.avatar} />
-            }
+            {isCurrentUserMessage(currentUser, messages[0]) && (
+              <MessageAvatar>
+                {messages[0].userFrom.username[0].toUpperCase()}
+              </MessageAvatar>
+            )}
           </MessageGroupContainer>
         ))}
         <StyledPopover
@@ -110,12 +118,12 @@ const ChatMessageList = forwardRef(
         >
           <EmojiList message={messageForContextMenu} />
           <List>
-            <ListItemButton onClick={handleMessageReply}>
+            {/* <ListItemButton onClick={handleMessageReply}>
               Ответить
             </ListItemButton>
             <ListItemButton>Изменить</ListItemButton>
             <ListItemButton>Копировать</ListItemButton>
-            <ListItemButton>Удалить</ListItemButton>
+            <ListItemButton>Удалить</ListItemButton> */}
           </List>
         </StyledPopover>
       </StyledChatMessageList>
@@ -206,7 +214,7 @@ const MessageTime = styled.span`
   font-size: 12px;
 `;
 
-const MessageAvatar = styled.img`
+const MessageAvatar = styled(Avatar)`
   width: 40px;
   height: 40px;
   border-radius: 50%;

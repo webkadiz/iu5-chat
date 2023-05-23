@@ -37,7 +37,7 @@ const ContactsModal: React.FC = () => {
   const qc = useQueryClient();
 
   const onSearch: ChangeEventHandler<HTMLInputElement> = (e) => {
-    const value = e.target.value.trim();
+    const value = e.target.value;
 
     setSearch(value);
   };

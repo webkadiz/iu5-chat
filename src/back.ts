@@ -30,10 +30,10 @@ export const getCurrentUser = (): Promise<User> => {
     const user = res.data.body;
 
     return {
-      id: user.Id,
-      username: user.Username,
-      phone: user.Phone,
-      avatar: user.Avatar,
+      id: user.id,
+      username: user.username,
+      phone: user.phoneNumber,
+      avatar: user.avatar,
       bio: user.bio,
     };
   });

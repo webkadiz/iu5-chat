@@ -101,7 +101,7 @@ const Auth: React.FC = () => {
               fullWidth
               variant="standard"
               value={bio}
-              onChange={(e) => setBio(e.target.value.trim())}
+              onChange={(e) => setBio(e.target.value)}
             />
           </>
         )}

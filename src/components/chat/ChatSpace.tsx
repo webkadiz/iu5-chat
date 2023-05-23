@@ -79,7 +79,7 @@ const ChatSpace = () => {
             render={({ data }) => {
               return (
                 <ChatMessageList
-                  messages={data}
+                  messages={data || []}
                   onReply={onReply}
                   ref={listRef}
                 />
