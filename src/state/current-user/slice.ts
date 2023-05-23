@@ -1,24 +1,20 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { User } from '../../api/generated/models/User';
 import { useAppSelector } from '../../hooks';
+import { User } from '../../types';
 
 const currentUser = createSlice({
-    name: 'currentUser',
-    initialState: {
-        id: 0,
-        username: '',
-        avatar: '',
+  name: 'currentUser',
+  initialState: null as User | null,
+  reducers: {
+    setCurrentUser(state, { payload }: PayloadAction<User | null>) {
+      return payload;
     },
-    reducers: {
-        setCurrentUser(state, { payload }: PayloadAction<User>) {
-            return payload;
-        },
-    },
+  },
 });
 
 export const useCurrentUser = () =>
-    useAppSelector((state) => state.currentUser);
+  useAppSelector((state) => state.currentUser);
 
 export const { setCurrentUser: setUserCurrentAction } = currentUser.actions;
 
