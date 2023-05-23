@@ -7,6 +7,7 @@ import { List, ListItemButton, Popover, PopoverOrigin } from '@mui/material';
 import { useState } from 'react';
 import moment from 'moment';
 import { Message, User } from '../../types';
+import ReactionList from '../reaction/ReactionList';
 
 type Props = {
   messages: Message[];
@@ -27,6 +28,8 @@ const ChatMessageList = forwardRef(
       vertical: 'top',
       horizontal: 'left',
     });
+    const [messageForContextMenu, setMessageForContextMenu] =
+      useState<Message | null>(null);
 
     const messageGroups = separateMessagesByUser(messages);
 
@@ -50,6 +53,7 @@ const ChatMessageList = forwardRef(
         vertical: isTopSide ? 'top' : 'bottom',
         horizontal: isRightSide ? 'right' : 'left',
       });
+      setMessageForContextMenu(message);
     };
 
     const handleMessageReply = () => {
@@ -82,9 +86,12 @@ const ChatMessageList = forwardRef(
                       __html: message.content,
                     }}
                   ></MessageContent>
-                  <MessageTime>
-                    {moment(message.timeCreated).format('hh:mm')}
-                  </MessageTime>
+                  <MessageMeta>
+                    <ReactionList reactions={message.reactions} />
+                    <MessageTime>
+                      {moment(message.timeCreated).format('hh:mm')}
+                    </MessageTime>
+                  </MessageMeta>
                 </MessageBox>
               ))}
             </MessageGroup>
@@ -101,13 +108,12 @@ const ChatMessageList = forwardRef(
           anchorOrigin={anchorOrigin}
           transformOrigin={transformOrigin}
         >
-          <EmojiList />
+          <EmojiList message={messageForContextMenu} />
           <List>
             <ListItemButton onClick={handleMessageReply}>
               Ответить
             </ListItemButton>
             <ListItemButton>Изменить</ListItemButton>
-            <ListItemButton>Переслать</ListItemButton>
             <ListItemButton>Копировать</ListItemButton>
             <ListItemButton>Удалить</ListItemButton>
           </List>
@@ -120,9 +126,7 @@ const ChatMessageList = forwardRef(
 const isCurrentUserMessage = (currentUser: User | null, message: Message) => {
   if (!currentUser) return false;
 
-  console.log(currentUser, message);
-
-  return message.user_from === currentUser.id;
+  return message.userFrom.id === currentUser.id;
 };
 
 const separateMessagesByUser = (messages: Message[]) => {
@@ -131,10 +135,10 @@ const separateMessagesByUser = (messages: Message[]) => {
   const groups = [];
 
   for (const message of messages) {
-    if (message.user_from !== user && group.length) {
+    if (message.userFrom.id !== user && group.length) {
       groups.push(group);
       group = [];
-      user = message.user_from;
+      user = message.userFrom.id;
     }
 
     group.push(message);
@@ -190,15 +194,16 @@ const MessageContent = styled.span`
   }
 `;
 
-// const BottomBar = styled.div`
-//     text-align: right;
-// `;
-
-const MessageTime = styled.span`
+const MessageMeta = styled.span`
+  display: flex;
+  align-items: center;
   align-self: flex-end;
-  font-size: 12px;
   margin-left: 10px;
   margin-bottom: -2px;
+`;
+
+const MessageTime = styled.span`
+  font-size: 12px;
 `;
 
 const MessageAvatar = styled.img`
