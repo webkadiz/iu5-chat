@@ -2,108 +2,125 @@ import { useContext, useRef, useState } from 'react';
 
 import styled from '@emotion/styled';
 
-import { Message } from '../../api/generated/models/Message';
-import { MessageService } from '../../api/generated/services/MessageService';
 import { ActiveChatContext } from '../../context/active-chat';
 import FetchWrapper from '../common/FetchWrapper';
 import ChatMessageInput from './ChatMessageInput';
 import ChatMessageList from './ChatMessageList';
 import MessageReplyPreview from '../message/MessageReplyPreview';
+import { Message } from '../../types';
+import TopToolbar from './TopToolbar';
+import { toast } from 'react-toastify';
+import { deleteChat, getMessages } from '../../back';
+import { useQueryClient } from 'react-query';
+import Queries from '../../queries';
 
 const SCROLL_END = 100000;
 
 const ChatSpace = () => {
-    const { activeChat } = useContext(ActiveChatContext);
-    const [messageReply, setMessageReply] = useState<Message | null>(null);
-    const [scrollPosition, setScrollPosition] = useState(SCROLL_END);
-    const listRef = useRef<HTMLDivElement>(null);
-    const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const { activeChat } = useContext(ActiveChatContext);
+  const [messageReply, setMessageReply] = useState<Message | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(SCROLL_END);
+  const listRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
-    const onReply = (message: Message) => {
-        setMessageReply(message);
+  const qc = useQueryClient();
 
-        if (messageInputRef.current) {
-            console.log('reply', messageInputRef.current);
-            messageInputRef.current.focus();
-        }
-    };
+  const onReply = (message: Message) => {
+    setMessageReply(message);
 
-    const onSend = () => {
-        closeMessageReply();
+    if (messageInputRef.current) {
+      console.log('reply', messageInputRef.current);
+      messageInputRef.current.focus();
+    }
+  };
 
-        setTimeout(() => {
-            if (listRef.current) {
-                listRef.current.scroll({
-                    top: listRef.current.scrollHeight,
-                    behavior: 'smooth',
-                });
-            }
-        }, 1000);
+  const onSend = () => {
+    closeMessageReply();
 
-        if (messageInputRef.current) messageInputRef.current.focus();
-    };
+    setTimeout(() => {
+      if (listRef.current) {
+        listRef.current.scroll({
+          top: listRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    }, 1000);
 
-    const closeMessageReply = () => {
-        setMessageReply(null);
-    };
+    if (messageInputRef.current) messageInputRef.current.focus();
+  };
 
-    return (
-        <ChatContainer>
-            {activeChat && (
-                <>
-                    <FetchWrapper<Message[]>
-                        queryKey={activeChat.id.toString()}
-                        fetchFn={async () =>
-                            await MessageService.getMessagesByChat(
-                                activeChat.id
-                            )
-                        }
-                        queryOptions={{ refetchInterval: 3000 }}
-                        emptyEl={<ChatMessageEmptyList />}
-                        render={({ data }) => {
-                            return (
-                                <ChatMessageList
-                                    messages={data}
-                                    onReply={onReply}
-                                    ref={listRef}
-                                />
-                            );
-                        }}
-                    />
-                    <InputBox>
-                        {messageReply && (
-                            <MessageReplyPreview
-                                message={messageReply}
-                                onClose={closeMessageReply}
-                            />
-                        )}
-                        <ChatMessageInput
-                            onSend={onSend}
-                            messageInputRef={messageInputRef}
-                        />
-                    </InputBox>
-                </>
+  const closeMessageReply = () => {
+    setMessageReply(null);
+  };
+
+  const deleteChatHandler = async () => {
+    if (!activeChat) return;
+
+    try {
+      await deleteChat(activeChat.id);
+
+      qc.invalidateQueries(Queries.chat.getChats);
+
+      toast.success('Чат удален');
+    } catch (e) {
+      toast.error('Не удалось удалить чат');
+    }
+  };
+
+  return (
+    <ChatContainer>
+      {activeChat && (
+        <>
+          <TopToolbar onDelete={deleteChatHandler} />
+          <FetchWrapper
+            queryKey={Queries.chat.getMessages(activeChat.id)}
+            fetchFn={async () => await getMessages(activeChat.id)}
+            queryOptions={{ refetchInterval: 5000 }}
+            emptyEl={<ChatMessageEmptyList />}
+            render={({ data }) => {
+              return (
+                <ChatMessageList
+                  messages={data}
+                  onReply={onReply}
+                  ref={listRef}
+                />
+              );
+            }}
+          />
+          <InputBox>
+            {messageReply && (
+              <MessageReplyPreview
+                message={messageReply}
+                onClose={closeMessageReply}
+              />
             )}
-        </ChatContainer>
-    );
+            <ChatMessageInput
+              onSend={onSend}
+              messageInputRef={messageInputRef}
+            />
+          </InputBox>
+        </>
+      )}
+    </ChatContainer>
+  );
 };
 
 const ChatMessageEmptyList = styled.div`
-    flex-grow: 1;
+  flex-grow: 1;
 `;
 
 const ChatContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: url('/chat-bg.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: url('/chat-bg.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 100%;
 `;
 
 const InputBox = styled.div`
-    flex-shrink: 0;
+  flex-shrink: 0;
 `;
 
 export default ChatSpace;

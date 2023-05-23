@@ -1,198 +1,193 @@
-import React, { ForwardedRef, forwardRef, MutableRefObject } from 'react';
+import React, { ForwardedRef, forwardRef } from 'react';
 import styled from '@emotion/styled';
 
-import { Message } from '../../api/generated/models/Message';
-import { User } from '../../api/generated/models/User';
 import { useCurrentUser } from '../../state/current-user/slice';
+import EmojiList from '../emoji/EmojiList';
 import { List, ListItemButton, Popover, PopoverOrigin } from '@mui/material';
 import { useState } from 'react';
 import moment from 'moment';
+import { Message, User } from '../../types';
 
 type Props = {
-    messages: Message[];
-    onReply: (message: Message) => void;
+  messages: Message[];
+  onReply: (message: Message) => void;
 };
 
 const ChatMessageList = forwardRef(
-    ({ messages, onReply }: Props, ref: ForwardedRef<HTMLDivElement>) => {
-        const currentUser = useCurrentUser();
-        const [activeMessage, setActiveMessage] = useState<Message | null>(
-            null
-        );
-        const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
-        const [openContextMenu, setOpenContextMenu] = useState(false);
-        const [anchorOrigin, setAnchorOrigin] = useState<PopoverOrigin>({
-            vertical: 'top',
-            horizontal: 'left',
-        });
-        const [transformOrigin, setTransformOrigin] = useState<PopoverOrigin>({
-            vertical: 'top',
-            horizontal: 'left',
-        });
+  ({ messages, onReply }: Props, ref: ForwardedRef<HTMLDivElement>) => {
+    const currentUser = useCurrentUser();
+    const [activeMessage, setActiveMessage] = useState<Message | null>(null);
+    const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
+    const [openContextMenu, setOpenContextMenu] = useState(false);
+    const [anchorOrigin, setAnchorOrigin] = useState<PopoverOrigin>({
+      vertical: 'top',
+      horizontal: 'left',
+    });
+    const [transformOrigin, setTransformOrigin] = useState<PopoverOrigin>({
+      vertical: 'top',
+      horizontal: 'left',
+    });
 
-        const messageGroups = separateMessagesByUser(messages);
+    const messageGroups = separateMessagesByUser(messages);
 
-        const handleOpenContextMenu = (
-            e: React.MouseEvent<HTMLDivElement>,
-            message: Message
-        ) => {
-            e.preventDefault();
+    const handleOpenContextMenu = (
+      e: React.MouseEvent<HTMLDivElement>,
+      message: Message
+    ) => {
+      e.preventDefault();
 
-            const isRightSide = isCurrentUserMessage(currentUser, message);
-            const isTopSide = e.clientY < window.innerHeight / 2;
+      const isRightSide = isCurrentUserMessage(currentUser, message);
+      const isTopSide = e.clientY < window.innerHeight / 2;
 
-            setActiveMessage(message);
-            setAnchorEl(e.currentTarget);
-            setOpenContextMenu(true);
-            setAnchorOrigin({
-                vertical: isTopSide ? 'top' : 'bottom',
-                horizontal: isRightSide ? 'left' : 'right',
-            });
-            setTransformOrigin({
-                vertical: isTopSide ? 'top' : 'bottom',
-                horizontal: isRightSide ? 'right' : 'left',
-            });
-        };
+      setActiveMessage(message);
+      setAnchorEl(e.currentTarget);
+      setOpenContextMenu(true);
+      setAnchorOrigin({
+        vertical: isTopSide ? 'top' : 'bottom',
+        horizontal: isRightSide ? 'left' : 'right',
+      });
+      setTransformOrigin({
+        vertical: isTopSide ? 'top' : 'bottom',
+        horizontal: isRightSide ? 'right' : 'left',
+      });
+    };
 
-        const handleMessageReply = () => {
-            if (!activeMessage) return;
+    const handleMessageReply = () => {
+      if (!activeMessage) return;
 
-            onReply(activeMessage);
-        };
+      onReply(activeMessage);
+    };
 
-        return (
-            <StyledChatMessageList ref={ref}>
-                {messageGroups.map((messages) => (
-                    <MessageGroupContainer
-                        current={isCurrentUserMessage(currentUser, messages[0])}
-                    >
-                        {!isCurrentUserMessage(currentUser, messages[0]) && (
-                            <MessageAvatar src={messages[0].from.avatar} />
-                        )}
-                        <MessageGroup
-                            current={isCurrentUserMessage(
-                                currentUser,
-                                messages[0]
-                            )}
-                        >
-                            {messages.map((message) => (
-                                <MessageBox
-                                    key={message.id}
-                                    onContextMenu={(e) =>
-                                        handleOpenContextMenu(e, message)
-                                    }
-                                    current={isCurrentUserMessage(
-                                        currentUser,
-                                        messages[0]
-                                    )}
-                                >
-                                    <MessageContent
-                                        dangerouslySetInnerHTML={{
-                                            __html: message.content,
-                                        }}
-                                    ></MessageContent>
-                                    <MessageTime>
-                                        {moment(message.createdAt).format(
-                                            'hh:mm'
-                                        )}
-                                    </MessageTime>
-                                </MessageBox>
-                            ))}
-                        </MessageGroup>
-                        {isCurrentUserMessage(currentUser, messages[0]) && (
-                            <MessageAvatar src={messages[0].from.avatar} />
-                        )}
-                    </MessageGroupContainer>
-                ))}
-                <Popover
-                    open={openContextMenu}
-                    anchorEl={anchorEl}
-                    onClose={() => setOpenContextMenu(false)}
-                    anchorOrigin={anchorOrigin}
-                    transformOrigin={transformOrigin}
+    return (
+      <StyledChatMessageList ref={ref}>
+        {messageGroups.map((messages) => (
+          <MessageGroupContainer
+            current={isCurrentUserMessage(currentUser, messages[0])}
+          >
+            {
+              !isCurrentUserMessage(currentUser, messages[0]) && null
+              // <MessageAvatar src={messages[0].from.avatar} />
+            }
+            <MessageGroup
+              current={isCurrentUserMessage(currentUser, messages[0])}
+            >
+              {messages.map((message) => (
+                <MessageBox
+                  key={message.id}
+                  onContextMenu={(e) => handleOpenContextMenu(e, message)}
+                  current={isCurrentUserMessage(currentUser, messages[0])}
                 >
-                    <List>
-                        <ListItemButton onClick={handleMessageReply}>
-                            Ответить
-                        </ListItemButton>
-                        <ListItemButton>Изменить</ListItemButton>
-                        <ListItemButton>Переслать</ListItemButton>
-                        <ListItemButton>Копировать</ListItemButton>
-                        <ListItemButton>Удалить</ListItemButton>
-                    </List>
-                </Popover>
-            </StyledChatMessageList>
-        );
-    }
+                  <MessageContent
+                    dangerouslySetInnerHTML={{
+                      __html: message.content,
+                    }}
+                  ></MessageContent>
+                  <MessageTime>
+                    {moment(message.timeCreated).format('hh:mm')}
+                  </MessageTime>
+                </MessageBox>
+              ))}
+            </MessageGroup>
+            {
+              isCurrentUserMessage(currentUser, messages[0]) && null
+              // <MessageAvatar src={messages[0].from.avatar} />
+            }
+          </MessageGroupContainer>
+        ))}
+        <StyledPopover
+          open={openContextMenu}
+          anchorEl={anchorEl}
+          onClose={() => setOpenContextMenu(false)}
+          anchorOrigin={anchorOrigin}
+          transformOrigin={transformOrigin}
+        >
+          <EmojiList />
+          <List>
+            <ListItemButton onClick={handleMessageReply}>
+              Ответить
+            </ListItemButton>
+            <ListItemButton>Изменить</ListItemButton>
+            <ListItemButton>Переслать</ListItemButton>
+            <ListItemButton>Копировать</ListItemButton>
+            <ListItemButton>Удалить</ListItemButton>
+          </List>
+        </StyledPopover>
+      </StyledChatMessageList>
+    );
+  }
 );
 
-const isCurrentUserMessage = (currentUser: User, message: Message) => {
-    return message.fromId == currentUser.id;
+const isCurrentUserMessage = (currentUser: User | null, message: Message) => {
+  if (!currentUser) return false;
+
+  console.log(currentUser, message);
+
+  return message.user_from === currentUser.id;
 };
 
 const separateMessagesByUser = (messages: Message[]) => {
-    let user = null;
-    let group: Message[] = [];
-    const groups = [];
+  let user = null;
+  let group: Message[] = [];
+  const groups = [];
 
-    for (const message of messages) {
-        if (message.fromId !== user && group.length) {
-            groups.push(group);
-            group = [];
-            user = message.fromId;
-        }
-
-        group.push(message);
+  for (const message of messages) {
+    if (message.user_from !== user && group.length) {
+      groups.push(group);
+      group = [];
+      user = message.user_from;
     }
 
-    group.length && groups.push(group);
+    group.push(message);
+  }
 
-    return groups;
+  group.length && groups.push(group);
+
+  return groups;
 };
 
 const StyledChatMessageList = styled.div`
-    display: flex;
-    flex-grow: 1;
-    flex-direction: column;
-    padding: 15px;
-    overflow-y: scroll;
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  padding: 15px;
+  overflow-y: scroll;
 `;
 
 const MessageGroupContainer = styled.div<{ current: boolean }>`
-    display: flex;
-    align-self: ${(p) => (p.current ? 'flex-end' : 'flex-start')};
-    margin-bottom: 10px;
+  display: flex;
+  align-self: ${(p) => (p.current ? 'flex-end' : 'flex-start')};
+  margin-bottom: 10px;
 `;
 
 const MessageGroup = styled.div<{ current: boolean }>`
-    display: flex;
-    flex-direction: column;
-    margin-left: 10px;
-    margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+  margin-right: 10px;
 
-    > div:last-child {
-        border-radius: ${(p) =>
-            p.current ? '8px 8px 0px 8px' : '8px 8px 8px 0px'};
-    }
+  > div:last-child {
+    border-radius: ${(p) =>
+      p.current ? '8px 8px 0px 8px' : '8px 8px 8px 0px'};
+  }
 `;
 
 const MessageBox = styled.div<{ current: boolean }>`
-    display: flex;
-    background: ${(p) => (p.current ? '#91d47b' : 'white')};
-    align-self: ${(p) => (p.current ? 'flex-end' : 'flex-start')};
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 2px;
-    text-align: left;
+  display: flex;
+  background: ${(p) => (p.current ? '#91d47b' : 'white')};
+  align-self: ${(p) => (p.current ? 'flex-end' : 'flex-start')};
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  text-align: left;
 `;
 
 const MessageContent = styled.span`
-    text-align: left;
-    // min-width: 150px;
+  text-align: left;
+  // min-width: 150px;
 
-    p {
-        margin: 0;
-    }
+  p {
+    margin: 0;
+  }
 `;
 
 // const BottomBar = styled.div`
@@ -200,17 +195,21 @@ const MessageContent = styled.span`
 // `;
 
 const MessageTime = styled.span`
-    align-self: flex-end;
-    font-size: 12px;
-    margin-left: 10px;
-    margin-bottom: -2px;
+  align-self: flex-end;
+  font-size: 12px;
+  margin-left: 10px;
+  margin-bottom: -2px;
 `;
 
 const MessageAvatar = styled.img`
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-top: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-top: auto;
+`;
+
+const StyledPopover = styled(Popover)`
+  //
 `;
 
 export default ChatMessageList;
