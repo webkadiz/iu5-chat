@@ -1,3 +1,5 @@
+import { AttachmentFile } from "./components/message/MessageAttachFile";
+
 export type User = {
   id: number;
   username: string;

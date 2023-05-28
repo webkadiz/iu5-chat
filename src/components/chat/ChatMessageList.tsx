@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef } from 'react';
+import React, { ForwardedRef, forwardRef, useRef } from 'react';
 import styled from '@emotion/styled';
 
 import { useCurrentUser } from '../../state/current-user/slice';
@@ -14,15 +14,31 @@ import { useState } from 'react';
 import moment from 'moment';
 import { Message, User } from '../../types';
 import ReactionList from '../reaction/ReactionList';
+import {
+  AttachmentFile,
+  DownloadFile,
+  SERVER_HOST,
+  SocketMessage,
+  SocketMessageType,
+} from '../message/MessageAttachFile';
+import Div from '../styled/Div';
+import DocumentIcon from '../icons/DocumentIcon';
+import prettyBytes from 'pretty-bytes';
+import { saveFile } from '../message/utils/saveFile';
 
 type Props = {
   messages: Message[];
   onReply: (message: Message) => void;
 };
 
+const downloadFileChunks: Uint8Array[] = [];
+
 const ChatMessageList = forwardRef(
   ({ messages, onReply }: Props, ref: ForwardedRef<HTMLDivElement>) => {
     const currentUser = useCurrentUser();
+
+    const downloadSocketRef = useRef<WebSocket | null>(null);
+
     const [activeMessage, setActiveMessage] = useState<Message | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
     const [openContextMenu, setOpenContextMenu] = useState(false);
@@ -68,6 +84,54 @@ const ChatMessageList = forwardRef(
       onReply(activeMessage);
     };
 
+    const downloadFileClickHandler = async (fileName: string) => {
+      const encodedFilename = encodeURIComponent(fileName);
+
+      const url = `${SERVER_HOST}/download/file/${encodedFilename}`;
+      downloadSocketRef.current = new WebSocket(url);
+
+      downloadSocketRef.current.binaryType = 'arraybuffer';
+
+      downloadSocketRef.current.onopen = function () {
+        const message: SocketMessage<void> = {
+          type: SocketMessageType.START_DOWNLOAD,
+        };
+
+        downloadSocketRef.current?.send(JSON.stringify(message));
+      };
+
+      downloadSocketRef.current.onmessage = function (event) {
+        const { type, payload }: SocketMessage<DownloadFile> = JSON.parse(
+          event.data
+        );
+
+        switch (type) {
+          case SocketMessageType.DATA:
+            if (payload) {
+              const { data, totalChunks, chunkIndex }: DownloadFile = payload;
+
+              if (chunkIndex === 1) {
+                downloadFileChunks.length = 0;
+              }
+
+              downloadFileChunks.push(new Uint8Array(data.data));
+
+              if (chunkIndex === totalChunks) {
+                saveFile(fileName, downloadFileChunks);
+              }
+            }
+        }
+      };
+
+      downloadSocketRef.current.onclose = function () {
+        console.log('Connection is closed');
+      };
+
+      downloadSocketRef.current.onerror = function (e) {
+        console.log(e);
+      };
+    };
+
     return (
       <StyledChatMessageList ref={ref}>
         {messageGroups.map((messages, i) => (
@@ -89,16 +153,51 @@ const ChatMessageList = forwardRef(
                   onContextMenu={(e) => handleOpenContextMenu(e, message)}
                   current={isCurrentUserMessage(currentUser, messages[0])}
                 >
-                  <MessageContent
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        message.content +
-                        '<br>' +
-                        (message.attachment.length
-                          ? `<img src="${message.attachment[0]}" width="300" />`
-                          : ''),
-                    }}
-                  ></MessageContent>
+                  {message.attachment.length ? (
+                    ['image/jpeg', 'image/png'].includes(
+                      parseAttachmentFile(message.attachment[0]).type
+                    ) ? (
+                      <MessageContent
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            `<img src="${
+                              parseAttachmentFile(message.attachment[0]).url
+                            }" width="600" />` +
+                            '<br>' +
+                            message.content,
+                        }}
+                      ></MessageContent>
+                    ) : (
+                      <Div dflex>
+                        <Div
+                          onClick={() =>
+                            downloadFileClickHandler(
+                              parseAttachmentFile(message.attachment[0]).name
+                            )
+                          }
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <DocumentIcon />
+                        </Div>
+                        <Div ml={8}>
+                          <Div bold>
+                            {parseAttachmentFile(message.attachment[0]).name}
+                          </Div>
+                          <Div secondary mb={12} mt={8}>
+                            {prettyBytes(
+                              parseAttachmentFile(message.attachment[0]).size
+                            )}
+                          </Div>
+                        </Div>
+                      </Div>
+                    )
+                  ) : (
+                    <MessageContent
+                      dangerouslySetInnerHTML={{
+                        __html: message.content,
+                      }}
+                    ></MessageContent>
+                  )}
                   <MessageMeta>
                     <ReactionList reactions={message.reactions} />
                     <MessageTime>
@@ -162,6 +261,10 @@ const separateMessagesByUser = (messages: Message[]) => {
 
   return groups;
 };
+
+function parseAttachmentFile(attachment: string): AttachmentFile {
+  return JSON.parse(attachment) as AttachmentFile;
+}
 
 const StyledChatMessageList = styled.div`
   display: flex;
