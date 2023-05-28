@@ -71,7 +71,7 @@ export const getMessages = (chatId: number): Promise<Message[]> => {
     .then((res) => res.data.body.messages);
 };
 
-type CreateMessageDto = Pick<
+export type CreateMessageDto = Pick<
   Message,
   'content' | 'attachment' | 'photos' | 'audio'
 > & {

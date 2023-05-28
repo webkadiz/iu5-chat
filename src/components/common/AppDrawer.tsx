@@ -43,6 +43,7 @@ const AppDrawer: React.FC<Props> = ({ open, setDrawerOpen }) => {
     try {
       await logoutUser();
 
+      toast.success('Выход выполнен');
       setDrawerOpen(false);
       dispatch(setUserCurrentAction(null));
     } catch (e) {

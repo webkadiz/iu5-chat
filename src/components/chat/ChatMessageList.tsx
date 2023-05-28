@@ -70,8 +70,9 @@ const ChatMessageList = forwardRef(
 
     return (
       <StyledChatMessageList ref={ref}>
-        {messageGroups.map((messages) => (
+        {messageGroups.map((messages, i) => (
           <MessageGroupContainer
+            key={i}
             current={isCurrentUserMessage(currentUser, messages[0])}
           >
             {!isCurrentUserMessage(currentUser, messages[0]) && (

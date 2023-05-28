@@ -23,11 +23,11 @@ import CollapseAnim from '../common/CollapseAnim';
 import { Remarkable } from 'remarkable';
 import MessageAttachFile from '../message/MessageAttachFile';
 import { TextareaAutosize } from '@mui/material';
-import { createMessage } from '../../back';
+import { createMessage, CreateMessageDto } from '../../back';
 import Queries from '../../queries';
 
 type Props = {
-  onSend: () => void;
+  onSend: (message: CreateMessageDto) => void;
   messageInputRef: RefObject<HTMLTextAreaElement>;
 };
 
@@ -64,16 +64,18 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
 
     setMessageValue('');
 
-    onSend();
-
     try {
-      await createMessage({
+      const message = {
         chatId: activeChat.id,
         content: messageValue.trim(),
         photos: [],
         attachment: [],
         audio: '',
-      });
+      };
+
+      await createMessage(message);
+
+      onSend(message);
 
       qc.invalidateQueries(Queries.chat.getMessages(activeChat.id));
     } catch (err) {

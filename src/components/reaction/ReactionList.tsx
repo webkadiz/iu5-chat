@@ -16,7 +16,7 @@ const ReactionList: React.FC<Props> = ({ reactions }) => {
         if (!emoji) return;
 
         return (
-          <EmojiContainer many={reaction.quantity > 1}>
+          <EmojiContainer many={reaction.quantity > 1} key={reaction.reaction}>
             <EmojiIcon src={emoji.src} />
             {reaction.quantity > 1 && (
               <EmojiCount>{reaction.quantity}</EmojiCount>
