@@ -44,10 +44,11 @@ export interface DownloadFile {
 }
 
 export interface AttachmentFile {
-    url: string;
-    name: string;
-    type: string; 
-    size: number;
+  url: string;
+  name: string;
+  type: string;
+  size: number;
+  caption: string;
 }
 
 export enum SocketMessageType {
@@ -79,6 +80,7 @@ const MessageAttachFile = ({ onSend }: Props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [choosenFile, setChoosenFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
+  const [caption, setCaption] = useState<string>('');
   const [chunkIndex, setChunkIndex] = useState<number | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
 
@@ -206,10 +208,11 @@ const MessageAttachFile = ({ onSend }: Props) => {
         case SocketMessageType.FINISH_UPLOAD:
           if (payload?.finalFileName) {
             const attachmentFile: AttachmentFile = {
-                url: FILE_HOST + '/uploads/' + payload.finalFileName,
-                name: choosenFile?.name ?? '',
-                type: choosenFile?.type ?? '',
-                size: choosenFile?.size ?? 0,
+              url: FILE_HOST + '/uploads/' + payload.finalFileName,
+              name: choosenFile?.name ?? '',
+              type: choosenFile?.type ?? '',
+              size: choosenFile?.size ?? 0,
+              caption,
             };
 
             console.log(attachmentFile);
@@ -285,7 +288,13 @@ const MessageAttachFile = ({ onSend }: Props) => {
               </Div>
             </Div>
           )}
-          <TextField variant="standard" label="Подпись" fullWidth />
+          <TextField
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            variant="standard"
+            label="Подпись"
+            fullWidth
+          />
           {progress !== null ? (
             <Div dflex jc="center" mb={4} mt={12}>
               <CircularProgressWithLabel value={progress} />

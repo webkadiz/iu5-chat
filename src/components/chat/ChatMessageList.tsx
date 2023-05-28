@@ -39,7 +39,7 @@ const ChatMessageList = forwardRef(
     const currentUser = useCurrentUser();
 
     const downloadSocketRef = useRef<WebSocket | null>(null);
-    const [progress, setProgress] = useState<number | null>(null);
+    const [progress, setProgress] = useState<{ [key: string]: number | null }>({});
 
     const [activeMessage, setActiveMessage] = useState<Message | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
@@ -117,13 +117,19 @@ const ChatMessageList = forwardRef(
               }
 
               downloadFileChunks.push(new Uint8Array(data.data));
-              setProgress((chunkIndex / totalChunks) * 100);
+              setProgress({
+                ...progress,
+                [fileName]: (chunkIndex / totalChunks) * 100,
+              });
 
               if (chunkIndex === totalChunks) {
                 saveFile(fileName, downloadFileChunks);
 
                 setTimeout(() => {
-                  setProgress(null);
+                  setProgress({
+                    ...progress,
+                    [fileName]: null,
+                  });
                 }, 400);
               }
             }
@@ -171,37 +177,50 @@ const ChatMessageList = forwardRef(
                               parseAttachmentFile(message.attachment[0]).url
                             }" width="600" />` +
                             '<br>' +
-                            message.content,
+                            parseAttachmentFile(message.attachment[0]).caption,
                         }}
                       ></MessageContent>
                     ) : (
-                      <Div dflex>
-                        <Div
-                          onClick={() =>
-                            downloadFileClickHandler(
+                      <Div dflex style={{ flexDirection: 'column' }}>
+                        <Div dflex>
+                          <Div
+                            onClick={() =>
+                              downloadFileClickHandler(
+                                parseAttachmentFile(message.attachment[0]).name
+                              )
+                            }
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {progress[
                               parseAttachmentFile(message.attachment[0]).name
-                            )
-                          }
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {progress !== null ? (
-                            <Div dflex jc="center" mb={4} mt={12}>
-                              <CircularProgressWithLabel value={progress} />
-                            </Div>
-                          ) : (
-                            <DocumentIcon />
-                          )}
-                          {/* <DocumentIcon /> */}
-                        </Div>
-                        <Div ml={8}>
-                          <Div bold>
-                            {parseAttachmentFile(message.attachment[0]).name}
-                          </Div>
-                          <Div secondary mb={12} mt={8}>
-                            {prettyBytes(
-                              parseAttachmentFile(message.attachment[0]).size
+                            ] ? (
+                              <Div dflex jc="center" mb={4} mt={12}>
+                                <CircularProgressWithLabel
+                                  value={
+                                    progress[
+                                      parseAttachmentFile(message.attachment[0])
+                                        .name
+                                    ]!
+                                  }
+                                />
+                              </Div>
+                            ) : (
+                              <DocumentIcon />
                             )}
                           </Div>
+                          <Div ml={8}>
+                            <Div bold>
+                              {parseAttachmentFile(message.attachment[0]).name}
+                            </Div>
+                            <Div secondary mb={12} mt={8}>
+                              {prettyBytes(
+                                parseAttachmentFile(message.attachment[0]).size
+                              )}
+                            </Div>
+                          </Div>
+                        </Div>
+                        <Div dflex>
+                          {parseAttachmentFile(message.attachment[0]).caption}
                         </Div>
                       </Div>
                     )
