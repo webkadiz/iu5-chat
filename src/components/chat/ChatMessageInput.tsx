@@ -85,7 +85,7 @@ const ChatMessageInput = ({ onSend, messageInputRef }: Props) => {
 
   return (
     <Container>
-      <MessageAttachFile />
+      <MessageAttachFile onSend={onSend} />
       <MessageInput
         ref={messageInputRef}
         placeholder="Пишите сообщеньку..."

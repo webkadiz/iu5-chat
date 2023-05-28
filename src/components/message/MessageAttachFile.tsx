@@ -8,11 +8,16 @@ import {
   TextField,
 } from '@mui/material';
 import prettyBytes from 'pretty-bytes';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import DocumentIcon from '../icons/DocumentIcon';
 import { CircularProgressWithLabel } from '../styled/CircularProgressWithLabel';
 import Div from '../styled/Div';
 import { saveFile } from './utils/saveFile';
+import { CreateMessageDto, createMessage } from '../../back';
+import { ActiveChatContext } from '../../context/active-chat';
+import { useQueryClient } from 'react-query';
+import Queries from '../../queries';
+import { toast } from 'react-toastify';
 
 export interface SocketMessage<T> {
   type: SocketMessageType;
@@ -57,7 +62,13 @@ const FILE_HOST: string = 'http://95.163.237.79:49160';
 
 const downloadFileChunks: Uint8Array[] = [];
 
-const MessageAttachFile: React.FC = () => {
+type Props = {
+  onSend: (message: CreateMessageDto) => void;
+};
+
+const MessageAttachFile = ({ onSend }: Props) => {
+  const { activeChat } = useContext(ActiveChatContext);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadSocketRef = useRef<WebSocket | null>(null);
   const downloadSocketRef = useRef<WebSocket | null>(null);
@@ -66,8 +77,9 @@ const MessageAttachFile: React.FC = () => {
   const [choosenFile, setChoosenFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [chunkIndex, setChunkIndex] = useState<number | null>(null);
-  const [finalFileName, setFinalFileName] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
+
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (chunkIndex === null) {
@@ -131,6 +143,7 @@ const MessageAttachFile: React.FC = () => {
 
     setTimeout(() => {
       setProgress(null);
+      closeModalHandler();
     }, 1500);
   };
 
@@ -181,15 +194,42 @@ const MessageAttachFile: React.FC = () => {
       setChunkIndex(1);
     };
 
-    uploadSocketRef.current.onmessage = function (event) {
+    uploadSocketRef.current.onmessage = async function (event) {
       const { type, payload }: SocketMessage<SuccessUploadFile> = JSON.parse(
         event.data
       );
 
       switch (type) {
         case SocketMessageType.FINISH_UPLOAD:
-          if (payload) {
-            setFinalFileName(payload.finalFileName);
+          if (payload?.finalFileName) {
+            const fileURL = FILE_HOST + '/uploads/' + payload.finalFileName;
+
+            const attachmentFile = {
+                filename: 'test',
+                fileURL,
+            }
+
+            if (!activeChat) return;
+
+            try {
+              const message = {
+                chatId: activeChat.id,
+                content: '',
+                photos: [],
+                attachment: [fileURL],
+                audio: '',
+              };
+
+              console.log(message);
+
+              await createMessage(message);
+
+              onSend(message);
+
+              qc.invalidateQueries(Queries.chat.getMessages(activeChat.id));
+            } catch (err) {
+              toast.error(`${err}`);
+            }
           }
       }
     };
@@ -262,7 +302,6 @@ const MessageAttachFile: React.FC = () => {
     setTimeout(() => {
       setChoosenFile(null);
       setPreview('');
-      setFinalFileName(null);
     }, 400);
 
     setIsModalOpen(false);
@@ -296,17 +335,6 @@ const MessageAttachFile: React.FC = () => {
             <Div dflex jc="center" mb={4} mt={12}>
               <CircularProgressWithLabel value={progress} />
             </Div>
-          ) : null}
-          {finalFileName ? (
-            <a
-              href={FILE_HOST + '/uploads/' + finalFileName}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Div dflex jc="center" mt={12} className="name">
-                {choosenFile?.name}
-              </Div>
-            </a>
           ) : null}
         </DialogContent>
         <DialogActions>

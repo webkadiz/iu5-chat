@@ -91,7 +91,12 @@ const ChatMessageList = forwardRef(
                 >
                   <MessageContent
                     dangerouslySetInnerHTML={{
-                      __html: message.content,
+                      __html:
+                        message.content +
+                        '<br>' +
+                        (message.attachment.length
+                          ? `<img src="${message.attachment[0]}" width="300" />`
+                          : ''),
                     }}
                   ></MessageContent>
                   <MessageMeta>
