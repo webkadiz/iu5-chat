@@ -25,6 +25,7 @@ import Div from '../styled/Div';
 import DocumentIcon from '../icons/DocumentIcon';
 import prettyBytes from 'pretty-bytes';
 import { saveFile } from '../message/utils/saveFile';
+import { CircularProgressWithLabel } from '../styled/CircularProgressWithLabel';
 
 type Props = {
   messages: Message[];
@@ -38,6 +39,7 @@ const ChatMessageList = forwardRef(
     const currentUser = useCurrentUser();
 
     const downloadSocketRef = useRef<WebSocket | null>(null);
+    const [progress, setProgress] = useState<number | null>(null);
 
     const [activeMessage, setActiveMessage] = useState<Message | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
@@ -115,9 +117,14 @@ const ChatMessageList = forwardRef(
               }
 
               downloadFileChunks.push(new Uint8Array(data.data));
+              setProgress((chunkIndex / totalChunks) * 100);
 
               if (chunkIndex === totalChunks) {
                 saveFile(fileName, downloadFileChunks);
+
+                setTimeout(() => {
+                  setProgress(null);
+                }, 400);
               }
             }
         }
@@ -177,7 +184,14 @@ const ChatMessageList = forwardRef(
                           }
                           style={{ cursor: 'pointer' }}
                         >
-                          <DocumentIcon />
+                          {progress !== null ? (
+                            <Div dflex jc="center" mb={4} mt={12}>
+                              <CircularProgressWithLabel value={progress} />
+                            </Div>
+                          ) : (
+                            <DocumentIcon />
+                          )}
+                          {/* <DocumentIcon /> */}
                         </Div>
                         <Div ml={8}>
                           <Div bold>
